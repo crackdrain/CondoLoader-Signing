@@ -1,25 +1,48 @@
-name: Sign CondoLoader
+name: Sign and Upload CondoLoader
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  sign:
+  build-and-sign:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      # 1. Checkout Code
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Sign with Sigstore
-        uses: sigstore/gh-action-sigstore@v1.2.0
+      # 2. Setup Node (If using JS/TS) or just use the file
+      - name: Set up environment
+        run: echo "Building on Windows"
+
+      # 3. Upload Artifact (FIXED: Using v4)
+      - name: Upload CondoLoader.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: CondoLoader-Binary
+          path: CondoLoader.exe
+          retention-days: 5
+
+      # 4. Sign with Sigstore (FIXED: Using correct action name)
+      - name: Sign binary with Sigstore
+        uses: sigstore/sigstore-action@v3.0.0
         with:
           inputs: "CondoLoader.exe"
-          bundle: "CondoLoader.bundle"
-          certificate-transparency: true
+          bundle: "CondoLoader.bundle.json"
+          output-signature: "CondoLoader.sig"
+          output-certificate: "CondoLoader.crt"
 
-      - name: Upload Signed File
-        uses: actions/upload-artifact@v3
+      # 5. Upload Signed Files (FIXED: Using v4)
+      - name: Upload Signed Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: Signed-File
-          path: CondoLoader.exe
+          name: CondoLoader-Signed
+          path: |
+            CondoLoader.exe
+            CondoLoader.bundle.json
+            CondoLoader.sig
+            CondoLoader.crt
+          retention-days: 5
