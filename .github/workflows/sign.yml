@@ -1,12 +1,9 @@
-name: Sign CondoLoader
+name: Sign Executable
 
 on:
   push:
     branches: [ main ]
-
-permissions:
-  contents: read
-  id-token: write
+  workflow_dispatch:
 
 jobs:
   sign:
@@ -14,21 +11,24 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.3.0
-
-      - name: Sign the executable
         run: |
-          cosign sign-blob --output-signature CondoLoader.exe.sig --output-certificate CondoLoader.exe.crt CondoLoader.exe
+          curl -LO https://github.com/sigstore/cosign/releases/latest/download/cosign-windows-amd64.exe
+          move cosign-windows-amd64.exe cosign.exe
+          echo "$GITHUB_WORKSPACE" >> $GITHUB_PATH
+
+      - name: Sign the Executable
+        run: |
+          cosign sign-blob --yes --output-signature CondoLoader.exe.sig --output-certificate CondoLoader.exe.crt CondoLoader.exe
         env:
-          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_EXPERIMENTAL: true
 
       - name: Upload Signed Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: Signed-Files
+          name: signed-files
           path: |
             CondoLoader.exe
             CondoLoader.exe.sig
