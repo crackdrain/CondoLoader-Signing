@@ -1,0 +1,25 @@
+name: Sign CondoLoader
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sign:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Sign with Sigstore
+        uses: sigstore/gh-action-sigstore@v1.2.0
+        with:
+          inputs: "CondoLoader.exe"
+          bundle: "CondoLoader.bundle"
+          certificate-transparency: true
+
+      - name: Upload Signed File
+        uses: actions/upload-artifact@v3
+        with:
+          name: Signed-File
+          path: CondoLoader.exe
