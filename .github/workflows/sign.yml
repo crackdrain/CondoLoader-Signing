@@ -1,48 +1,35 @@
-name: Sign and Upload CondoLoader
+name: Sign CondoLoader
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-  build-and-sign:
+  sign:
     runs-on: windows-latest
 
     steps:
-      # 1. Checkout Code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Setup Node (If using JS/TS) or just use the file
-      - name: Set up environment
-        run: echo "Building on Windows"
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.3.0
 
-      # 3. Upload Artifact (FIXED: Using v4)
-      - name: Upload CondoLoader.exe
+      - name: Sign the executable
+        run: |
+          cosign sign-blob --output-signature CondoLoader.exe.sig --output-certificate CondoLoader.exe.crt CondoLoader.exe
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+
+      - name: Upload Signed Files
         uses: actions/upload-artifact@v4
         with:
-          name: CondoLoader-Binary
-          path: CondoLoader.exe
-          retention-days: 5
-
-      # 4. Sign with Sigstore (FIXED: Using correct action name)
-      - name: Sign binary with Sigstore
-        uses: sigstore/sigstore-action@v3.0.0
-        with:
-          inputs: "CondoLoader.exe"
-          bundle: "CondoLoader.bundle.json"
-          output-signature: "CondoLoader.sig"
-          output-certificate: "CondoLoader.crt"
-
-      # 5. Upload Signed Files (FIXED: Using v4)
-      - name: Upload Signed Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: CondoLoader-Signed
+          name: Signed-Files
           path: |
             CondoLoader.exe
-            CondoLoader.bundle.json
-            CondoLoader.sig
-            CondoLoader.crt
-          retention-days: 5
+            CondoLoader.exe.sig
+            CondoLoader.exe.crt
